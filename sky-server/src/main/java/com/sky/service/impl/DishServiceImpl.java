@@ -8,10 +8,12 @@ import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
@@ -20,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -32,6 +35,9 @@ public class DishServiceImpl implements DishService {
 
     @Autowired
     private SetmealDishMapper setmealDishMapper;
+
+    @Autowired
+    private SetmealMapper setmealMapper;
 
     /**
      * 新增菜品和对应的口味
@@ -150,5 +156,34 @@ public class DishServiceImpl implements DishService {
             });
         }
         dishFlavorMapper.insertBatch(dishFlavors);
+    }
+
+
+    /**
+     * 菜品起售、停售
+     * @param status
+     * @param id
+     */
+    @Override
+    public void startOrStop(Integer status, Long id) {
+        Dish dish=new Dish();
+        dish.setId(id);
+        dish.setStatus(status);
+
+        dishMapper.update(dish);
+
+        //如果是将菜品停售，则包含当前菜品的套餐也要停售
+        if(status==StatusConstant.DISABLE){
+            List<Long> dishIds=new ArrayList<>();
+            dishIds.add(id);
+
+            List<Long> setmealIds = setmealDishMapper.getSetmealIdsByDishIds(dishIds);
+            Setmeal setmeal=new Setmeal();
+            for (Long setmealId : setmealIds) {
+                setmeal.setId(setmealId);
+                setmeal.setStatus(StatusConstant.DISABLE);
+                setmealMapper.update(setmeal);
+            }
+        }
     }
 }
