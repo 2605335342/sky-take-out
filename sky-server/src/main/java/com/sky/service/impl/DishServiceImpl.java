@@ -154,8 +154,9 @@ public class DishServiceImpl implements DishService {
             dishFlavors.forEach(dishFlavor -> {
                 dishFlavor.setDishId(dishDTO.getId());
             });
+
+            dishFlavorMapper.insertBatch(dishFlavors);
         }
-        dishFlavorMapper.insertBatch(dishFlavors);
     }
 
 
@@ -185,5 +186,22 @@ public class DishServiceImpl implements DishService {
                 setmealMapper.update(setmeal);
             }
         }
+    }
+
+
+    /**
+     * 根据分类id查询菜品
+     * @param categoryId
+     * @return
+     */
+    @Override
+    public List<Dish> list(Long categoryId) {
+        Dish dish =new Dish();
+        dish.setCategoryId(categoryId);
+        dish.setStatus(StatusConstant.ENABLE);
+
+        List<Dish> dishes=dishMapper.list(dish);
+
+        return dishes;
     }
 }
