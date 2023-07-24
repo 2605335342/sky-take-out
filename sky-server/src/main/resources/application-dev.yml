@@ -11,3 +11,8 @@ sky:
     access-key-id: LTAI5t8j6ZJZgnCrY4Z4XSCT
     access-key-secret: P0OZdJNSbRYQjjceMeNFKh87VhOgTq
     bucket-name: cangqiong-pro
+  redis:
+    host: localhost
+    port: 6379
+    password: root
+    database: 0
