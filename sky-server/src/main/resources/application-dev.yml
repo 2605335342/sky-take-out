@@ -16,3 +16,6 @@ sky:
     port: 6379
     password: root
     database: 0
+  wechat:
+    appid: wx5a43bebe608c3e89
+    secret: 77140586282562f876a0fdf28b83b302
