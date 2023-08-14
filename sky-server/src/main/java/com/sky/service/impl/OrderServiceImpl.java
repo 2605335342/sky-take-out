@@ -1,5 +1,6 @@
 package com.sky.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
@@ -21,6 +22,7 @@ import com.sky.service.OrderService;
 import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.websocket.WebSocketServer;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,9 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +49,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private ShoppingCartMapper shoppingCartMapper;
+
+    @Autowired
+    private WebSocketServer webSocketServer;
 
     /**
      * 用户下单
@@ -124,6 +131,15 @@ public class OrderServiceImpl implements OrderService {
         orders1.setCheckoutTime(LocalDateTime.now());  //更新结账时间
 
         orderMapper.update(orders1);
+
+        //通过websocket向客户端浏览器推送消息（参数：type、orderId、content）
+        Map map=new HashMap();
+        map.put("type",1);  //1：来单提醒  2：客户催单
+        map.put("orderId",orders.getId());  //订单id
+        map.put("content","订单号："+orderNumber);  //消息内容
+
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
     }
 
 
@@ -415,5 +431,30 @@ public class OrderServiceImpl implements OrderService {
         orders1.setDeliveryTime(LocalDateTime.now());  //设置送达时间
 
         orderMapper.update(orders1);
+    }
+
+
+    /**
+     * 催单
+     * @param id
+     */
+    @Override
+    public void reminder(Long id) {
+        //根据id查询订单
+        Orders orders = orderMapper.getById(id);
+
+        //判断订单是否存在
+        if(orders==null){
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+
+        //通过websocket向客户端浏览器推送消息（参数：type、orderId、content）
+        Map map=new HashMap();
+        map.put("type",2);  //1：来单提醒  2：客户催单
+        map.put("orderId",id);  //订单id
+        map.put("content","订单号："+orders.getNumber());  //消息内容
+
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
     }
 }
